@@ -6,6 +6,11 @@ from sqlalchemy.orm import Session
 from app.schemas.transaction import TransactionCreate, TransactionRead
 from app.crud.transaction import create_transaction
 from app.db.session import SessionLocal
+from fastapi.security import OAuth2PasswordBearer
+from app.core.security import get_current_user
+from app.schemas.user import TokenData
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 router = APIRouter()
 
@@ -19,12 +24,14 @@ def get_db():
 
 # Endpoint to create a new account
 @router.post("/accounts/", response_model=AccountRead)
-def create_new_account(account: AccountCreate, db: Session = Depends(get_db)):
+def create_new_account(account: AccountCreate,
+                       db: Session = Depends(get_db)
+                       ):
     return create_account(db=db, account=account)
 
 # Endpoint to get account details by ID
 @router.get("/accounts/{account_id}", response_model=AccountRead)
-def read_account(account_id: int, db: Session = Depends(get_db)):
+def read_account(account_id: int, db: Session = Depends(get_db),current_user: TokenData = Depends(get_current_user)):
     db_account = get_account_by_id(db, account_id)
     if db_account is None:
         raise HTTPException(status_code=404, detail="Account not found")
@@ -32,7 +39,7 @@ def read_account(account_id: int, db: Session = Depends(get_db)):
 
 # Endpoint to get transactions for an account by account ID
 @router.get("/accounts/{account_id}/transactions", response_model=list[TransactionRead])
-def get_account_transactions(account_id: int, db: Session = Depends(get_db)):
+def get_account_transactions(account_id: int, db: Session = Depends(get_db),current_user: TokenData = Depends(get_current_user)):
     db_account = get_account_by_id(db, account_id)
     if db_account is None:
         raise HTTPException(status_code=404, detail="Account not found")

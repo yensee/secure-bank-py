@@ -40,3 +40,6 @@ def create_transaction(db: Session, transaction: TransactionCreate):
     db.refresh(account)  # Update the account balance in the database
 
     return db_transaction
+
+def count_transactions(db: Session):
+    return db.query(Transaction).count()
